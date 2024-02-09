@@ -198,6 +198,7 @@
     max-height: 302px;
     padding: 64px;
     margin-bottom: 0;
+    flex-grow: 1;
   }
 
   .fav-quote-title {
