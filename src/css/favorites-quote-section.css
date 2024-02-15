@@ -138,10 +138,6 @@
 }
 
 @media screen and (min-width: 768px) {
-  .fav-quote-section {
-    margin-top: 32px;
-  }
-
   .fav-quote-wrapper {
     gap: 16px;
 
@@ -186,10 +182,6 @@
 }
 
 @media screen and (min-width: 1440px) {
-  .fav-quote-section {
-    margin-top: 24px;
-  }
-
   .quote-section-inner {
     display: flex;
   }
