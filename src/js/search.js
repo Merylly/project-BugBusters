@@ -7,16 +7,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     const bpFormWrapper = document.querySelector('.bp-form-wraper');
     const bpSearchInput = document.querySelector('.bp-search-input');
     const bpSearchButton = document.querySelector('.bp-search-button');
+    let isSearched = false;
 
     // switch-item 
     for (let i = 0; i < switchItems.length; i++) {
         switchItems[i].addEventListener('click', async function() {
             const filter = switchItems[i].dataset.filter;
 
-            clearSearchResults();
-
-            const searchTerm = bpSearchInput.value.trim().toLowerCase();
-            performSearch('Muscles', 'All', searchTerm);
+            if (isSearched) {
+                const searchTerm = bpSearchInput.value.trim().toLowerCase();
+                performSearch('Muscles', 'All', searchTerm);
+            } else {
+                clearSearchResults();
+            }
         });
     }
 
@@ -35,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else {
             renderExercises(filteredExercises, bpList);
         }
+        isSearched = true;
     }
 
     // Помилка пошуку
@@ -78,8 +82,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const filter = document.querySelector('.switch-item.is-active').dataset.filter;
         const subtype = 'All';
         const searchTerm = bpSearchInput.value.trim().toLowerCase();
-      performSearch(filter, subtype, searchTerm);
-      
+        performSearch(filter, subtype, searchTerm);
+
         bpSearchInput.value = '';
     });
 
@@ -92,11 +96,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     //Перехід switchItems
-    switchItems.forEach(item => {
-        item.addEventListener('click', function() {
-            if (!bpList.classList.contains('visually-hidden')) {
-                exercisesList.classList.remove('visually-hidden');
-            }
-        });
+switchItems.forEach(item => {
+    item.addEventListener('click', function() {
+        if (!bpList.classList.contains('visually-hidden')) {
+            bpList.classList.add('visually-hidden');
+        }
+        if (exercisesList.classList.contains('visually-hidden')) {
+            exercisesList.classList.remove('visually-hidden');
+        }
     });
+});
+
+
 });
