@@ -37,10 +37,10 @@ function onDeleteExerciseBtnClick(event) {
     renderFavoritesList(exercisesWithoutDeletedID);
   }
 
-  const openModalBtn = event.target.classList.contains('start-btn');
-  if (openModalBtn) {
-    const exerciseID = deleteBTN.dataset.id;
-  }
+  // const openModalBtn = event.target.classList.contains('start-btn');
+  // if (openModalBtn) {
+  //   const exerciseID = deleteBTN.dataset.id;
+  // }
 }
 
 export function onAddToFavoritesBtnClick(event) {
