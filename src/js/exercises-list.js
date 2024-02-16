@@ -5,11 +5,13 @@ const switchItems = document.querySelectorAll('.switch-item');
 const cardContainer = document.querySelector(".bp-list");
 const exercisesList = document.querySelector('.exercises-list');
 const exercisesPageContainer = document.querySelector('#tui-pagination-container');
+const titleExercises = document.querySelector('.title-exercises');
 
 // Для пагінації
 let itemsPerPage = 8;
 let currentPage = 1;
 let totalPages;
+let pageSize = itemsPerPage;
 
 
 // Оновлення кількості карток (при завантаженні сторінки та при зміні розміру вікна)
@@ -23,6 +25,7 @@ window.addEventListener('load', () => {
         card.addEventListener('click', event => handleExerciseCardClick(event));
     });
 });
+
 
 if (exercisesList) {
     exercisesList.addEventListener('click', function (event) {
@@ -49,6 +52,9 @@ if (exercisesList) {
             const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
             window.history.replaceState(null, null, newUrl); // задаю квері параметри в урлу
     
+
+            
+
             renderPage(exerciseValue);
         }
     });
@@ -74,12 +80,14 @@ function debounce(func, wait) {
             clearTimeout(timeout);
             func(...args);
         };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
     }
 }
 
 // Визначення кількості карток на сторінці (в залежності від розміру екрану)
 function updateItemsPerPage() {
-    if (window.innerWidth < 1200) {
+    if (window.innerWidth < 768) {
         itemsPerPage = 8; // для моб
     } else {
         itemsPerPage = 9; // для десктопів
@@ -101,6 +109,7 @@ async function renderPage() {
     try {
         const activeContainer = document.querySelector('.switch-item.is-active');
         if (!activeContainer) {
+            console.error('No active container found');
             return;
         }
 
@@ -118,34 +127,30 @@ async function renderPage() {
         let equipment = searchParams.get("equipment");
 
         if (searchParams.size) {
-            const exerciseData = await fetchDataFromApi({ bodypart, muscles, equipment});
+            const exerciseData = await fetchDataFromApi({ bodypart, muscles, equipment });
 
-            
-            // Отримання загальної кількості сторінок
-            totalPages = exerciseData.totalPages;
+            // Отримуємо інформацію про кількість сторінок та поточну сторінку з даних API
+            const totalPages = exerciseData.totalPages;
+            currentPage = exerciseData.page; // Оновлено для правильного використання поточної сторінки
 
-            // Рендеринг пагінації
-           renderPagination(totalPages, currentPage);
-
-           // Рендеринг вправ (перша сторінка)
-           renderExerciseCards(exerciseData.results.slice(0, itemsPerPage));
-
-
+            // Рендеринг вправ (поточна сторінка)
+            renderExerciseCards(exerciseData.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
+            // Рендеринг пагінації з вказанням загальної кількості сторінок та поточної сторінки
+            renderPagination(totalPages, currentPage);
         }
 
         const urlParams = new URLSearchParams(window.location.search); // очищають url
         window.history.replaceState(null, null, window.location.pathname ); // очищають url
-
     } catch (error) {
         console.error('Error fetching and rendering data:', error);
     }
-
 }
 
 // Функція для обробки зміни сторінки
-function onPageChange(page) {
+async function onPageChange(page) {
     currentPage = page;
-    renderPage();
+    await renderPage();
+    renderExerciseCards();
 }
 
 
@@ -157,14 +162,32 @@ function renderPagination(totalPages, currentPage) {
     }
     exercisesPageContainer.innerHTML = paginationMarkup; // Змінено ім'я контейнера пагінації
 
-    // Додавання обробника кліку до кожної кнопки сторінки
-    const pageButtons = exercisesPageContainer.querySelectorAll('.page-btn');
-    pageButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const page = parseInt(button.dataset.page); // Отримання номера сторінки з дата-атрибуту кнопки
-            onPageChange(page); // Оновлення сторінки з врахуванням нової сторінки
-        });
+//     // Додавання обробника кліку до кожної кнопки сторінки
+//     const pageButtons = exercisesPageContainer.querySelectorAll('.page-btn');
+//     pageButtons.forEach(button => {
+//         button.addEventListener('click', () => {
+//             const page = parseInt(button.dataset.page); 
+//         });
+//     });
+// }
+
+// Додавання обробника кліку до кожної кнопки сторінки
+const pageButtons = exercisesPageContainer.querySelectorAll('.page-btn');
+pageButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const page = parseInt(button.dataset.page); 
+ 
+        const paginationOptions = {
+            totalItems: pageSize * totalPages,
+            itemsPerPage: pageSize,
+            visiblePages: 3,
+            centerAlign: true,
+            currentPage: page 
+        };
+        onPageChange(page); 
+        renderPagination(totalPages, page); 
     });
+});
 }
 
 // Рендеринг карток вправ
@@ -174,11 +197,6 @@ async function renderExerciseCards(exerciseData) {
             console.log('No exercise data to render');
             return;
         }
-        if (!exerciseData || exerciseData.length === 0) {
-            console.log('No exercise data to render');
-            return;
-        }
-
         console.log("Rendering exercise cards with data:", exerciseData);
 
         let markup = '';
@@ -188,7 +206,6 @@ async function renderExerciseCards(exerciseData) {
 
         cardContainer.innerHTML = markup;
     } catch (error) {
-        console.error('Error rendering exercise cards:', error);
         console.error('Error rendering exercise cards:', error);
     }
 }
@@ -266,11 +283,18 @@ function capitalizeFirstLetter(word) {
     }
 }
 
-// Обробник на елемент переключення
+// Обробник кліку на елемент переключення
 function handleSwitchItemClick() {
     switchItems.forEach(item => item.classList.remove('is-active'));
     this.classList.add('is-active');
     currentPage = 1;
+
+    // Додаємо відповідне значення до активного елемента
+    const activeFilter = this.getAttribute('data-filter');
+    this.textContent = `${activeFilter} / ${exerciseData}`;
+
+    // Додаємо відповідне значення до title-exercises
+    titleExercises.textContent = `Title: ${exerciseData}`;
 
     renderPage();
 }
