@@ -23,6 +23,11 @@
   gap: 28px;
   margin: 80px auto 0 auto;
 }
+
+.message-block-favorites.hidden {
+  display: none;
+}
+
 .text-favorites {
   font-size: 14px;
   line-height: 129%;
