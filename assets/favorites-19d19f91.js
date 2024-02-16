@@ -181,4 +181,4 @@ import{a as f,P as F}from"./vendor-4d8461fa.js";(function(){const t=document.cre
              </ul>
            </li>
     `).join("");m.innerHTML=t}export{se as c,te as p};
-//# sourceMappingURL=favorites-7b7fd473.js.map
+//# sourceMappingURL=favorites-19d19f91.js.map
