@@ -74,15 +74,7 @@ function debounce(func, wait) {
             clearTimeout(timeout);
             func(...args);
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+    }
 }
 
 // Визначення кількості карток на сторінці (в залежності від розміру екрану)
@@ -99,8 +91,6 @@ async function fetchDataFromApi(exercise) {
     try {
         const response = await getApiInfo({ ...exercise , type: 'exercises' });
         return response.data;
-        const response = await getApiInfo({ ...exercise , type: 'exercises' });
-        return response.data;
     } catch (error) {
         throw new Error('Failed to fetch data from API: ' + error.message);
     }
@@ -113,10 +103,6 @@ async function renderPage() {
         if (!activeContainer) {
             return;
         }
-        const activeContainer = document.querySelector('.switch-item.is-active');
-        if (!activeContainer) {
-            return;
-        }
 
         // Для запиту
         const query = activeContainer.textContent.trim().toLowerCase();
@@ -124,18 +110,7 @@ async function renderPage() {
             console.error('Query is undefined');
             return;
         }
-        // Для запиту
-        const query = activeContainer.textContent.trim().toLowerCase();
-        if (!query) {
-            console.error('Query is undefined');
-            return;
-        }
 
-        // Для даних з API
-        const searchParams = new URLSearchParams(window.location.search); // Беремо дані з url qewry params
-        let bodypart = searchParams.get("bodypart");
-        let muscles = searchParams.get("muscles");
-        let equipment = searchParams.get("equipment");
         // Для даних з API
         const searchParams = new URLSearchParams(window.location.search); // Беремо дані з url qewry params
         let bodypart = searchParams.get("bodypart");
@@ -160,22 +135,17 @@ async function renderPage() {
 
         const urlParams = new URLSearchParams(window.location.search); // очищають url
         window.history.replaceState(null, null, window.location.pathname ); // очищають url
-        const urlParams = new URLSearchParams(window.location.search); // очищають url
-        window.history.replaceState(null, null, window.location.pathname ); // очищають url
 
     } catch (error) {
         console.error('Error fetching and rendering data:', error);
     }
-    } catch (error) {
-        console.error('Error fetching and rendering data:', error);
-    }
+
 }
 
 // Функція для обробки зміни сторінки
 function onPageChange(page) {
     currentPage = page;
     renderPage();
-    return markup;
 }
 
 
@@ -211,10 +181,6 @@ async function renderExerciseCards(exerciseData) {
 
         console.log("Rendering exercise cards with data:", exerciseData);
 
-        let markup = '';
-        exerciseData.forEach(exercise => {
-            markup += renderExerciseCardMarkup(exercise);
-        });
         let markup = '';
         exerciseData.forEach(exercise => {
             markup += renderExerciseCardMarkup(exercise);
@@ -291,7 +257,6 @@ function renderExerciseCardMarkup(exercise) {
     return markup;
 }
 
-
 function capitalizeFirstLetter(word) {
     // Перевірка чи починається слово з букви
     if (/^[a-zA-Z]/.test(word)) {
@@ -302,36 +267,11 @@ function capitalizeFirstLetter(word) {
 }
 
 // Обробник на елемент переключення
-async function handleSwitchItemClick() {
+function handleSwitchItemClick() {
     switchItems.forEach(item => item.classList.remove('is-active'));
     this.classList.add('is-active');
-    currentPage = parseInt(this.dataset.page); 
+    currentPage = 1;
 
-    try {
-        const data = await getApiInfo({
-          type: 'filters',
-          filter: currentPage, // Змінено defaultPage на currentPage
-          limit: pageSize, // Оголошено змінну pageSize
-          page: currentPage,
-        });
-    
-        const { page, totalPages, results } = data;
-    
-        exercisesList.innerHTML = createMarkup(results);
-        pagContainer.innerHTML = '';
-    
-        if (totalPages > 1) {
-          paginationInstance = createPaginationFilters(
-            pagContainer,
-            totalPages,
-            currentPage,
-            pageSize,
-            onPageChange
-          );
-        }
-      } catch (error) {
-        console.error(error);
-      }
     renderPage();
 }
 
@@ -340,10 +280,23 @@ switchItems.forEach(item => {
     item.addEventListener('click', handleSwitchItemClick);
 });
 
-// Додавання обробника кліку до кожного елемента переключення
-switchItems.forEach(item => {
-    item.addEventListener('click', handleSwitchItemClick);
+// Оновлення кількості карток (при завантаженні сторінки та при зміні розміру вікна)
+window.addEventListener('load', () => {
+    updateItemsPerPage();
+    renderPage();
 });
 
-export { capitalizeFirstLetter };
+window.addEventListener(
+    'resize',
+    debounce(() => {
+    const prevItemsPerPage = itemsPerPage;
+    updateItemsPerPage();
 
+    if (prevItemsPerPage !== itemsPerPage) {
+        renderPage();
+    }
+    }, 250)
+);
+
+
+export { capitalizeFirstLetter };
