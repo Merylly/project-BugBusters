@@ -120,19 +120,17 @@ function renderFavoritesList(favoritesList) {
              </div>
              <ul class="list-ex-category">
                <li>
-                 <p class="category-text">
-                   <span class="category-text-accent">Burned calories: ${cardInfo.burnedCalories} </span
-                   >200/ 3 min
+                 <p class="category-text-accent">Burned calories:<span class="category-text"> ${cardInfo.burnedCalories}/ 3 min</span
+                   >
                  </p>
                </li>
                <li>
-                 <p class="category-text">
-                   <span class="category-text-accent">Body part: ${cardInfo.bodyPart}: </span>Waist
+                 <p class="category-text-accent">Body part:<span class="category-text"> ${cardInfo.bodyPart}</span>
                  </p>
                </li>
                <li>
-                 <p class="category-text">
-                   <span class="category-text-accent">Target: ${cardInfo.target}: </span>Abs
+                 <p class="category-text-accent">
+                   Target:<span class="category-text"> ${cardInfo.target}</span>
                  </p>
                </li>
              </ul>
