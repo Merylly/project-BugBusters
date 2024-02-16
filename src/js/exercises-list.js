@@ -76,6 +76,12 @@ function debounce(func, wait) {
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
     };
 }
 
@@ -93,6 +99,8 @@ async function fetchDataFromApi(exercise) {
     try {
         const response = await getApiInfo({ ...exercise , type: 'exercises' });
         return response.data;
+        const response = await getApiInfo({ ...exercise , type: 'exercises' });
+        return response.data;
     } catch (error) {
         throw new Error('Failed to fetch data from API: ' + error.message);
     }
@@ -105,6 +113,10 @@ async function renderPage() {
         if (!activeContainer) {
             return;
         }
+        const activeContainer = document.querySelector('.switch-item.is-active');
+        if (!activeContainer) {
+            return;
+        }
 
         // Для запиту
         const query = activeContainer.textContent.trim().toLowerCase();
@@ -112,7 +124,18 @@ async function renderPage() {
             console.error('Query is undefined');
             return;
         }
+        // Для запиту
+        const query = activeContainer.textContent.trim().toLowerCase();
+        if (!query) {
+            console.error('Query is undefined');
+            return;
+        }
 
+        // Для даних з API
+        const searchParams = new URLSearchParams(window.location.search); // Беремо дані з url qewry params
+        let bodypart = searchParams.get("bodypart");
+        let muscles = searchParams.get("muscles");
+        let equipment = searchParams.get("equipment");
         // Для даних з API
         const searchParams = new URLSearchParams(window.location.search); // Беремо дані з url qewry params
         let bodypart = searchParams.get("bodypart");
@@ -137,7 +160,12 @@ async function renderPage() {
 
         const urlParams = new URLSearchParams(window.location.search); // очищають url
         window.history.replaceState(null, null, window.location.pathname ); // очищають url
+        const urlParams = new URLSearchParams(window.location.search); // очищають url
+        window.history.replaceState(null, null, window.location.pathname ); // очищають url
 
+    } catch (error) {
+        console.error('Error fetching and rendering data:', error);
+    }
     } catch (error) {
         console.error('Error fetching and rendering data:', error);
     }
@@ -176,6 +204,10 @@ async function renderExerciseCards(exerciseData) {
             console.log('No exercise data to render');
             return;
         }
+        if (!exerciseData || exerciseData.length === 0) {
+            console.log('No exercise data to render');
+            return;
+        }
 
         console.log("Rendering exercise cards with data:", exerciseData);
 
@@ -183,9 +215,14 @@ async function renderExerciseCards(exerciseData) {
         exerciseData.forEach(exercise => {
             markup += renderExerciseCardMarkup(exercise);
         });
+        let markup = '';
+        exerciseData.forEach(exercise => {
+            markup += renderExerciseCardMarkup(exercise);
+        });
 
         cardContainer.innerHTML = markup;
     } catch (error) {
+        console.error('Error rendering exercise cards:', error);
         console.error('Error rendering exercise cards:', error);
     }
 }
