@@ -1,19 +1,20 @@
 import { getApiInfo } from './api.js';
-import { createPaginationFilters } from './pagination.js'; 
+
 
 // Вибір з DOM
 const switchItems = document.querySelectorAll('.switch-item');
 const cardContainer = document.querySelector(".bp-list");
-const paginContainer = document.querySelector('#tui-pagination-container');
 const exercisesList = document.querySelector('.exercises-list');
+const exercisesPageContainer = document.querySelector('#tui-pagination-container');
+const titleExercises = document.querySelector('.title-exercises');
 
 // Для пагінації
 let itemsPerPage = 8;
 let currentPage = 1;
-let paginationInstance; 
-let totalPages; 
+let totalPages;
+let pageSize = itemsPerPage;
 
-// створення карток
+
 // Оновлення кількості карток (при завантаженні сторінки та при зміні розміру вікна)
 window.addEventListener('load', () => {
     updateItemsPerPage();
@@ -25,6 +26,7 @@ window.addEventListener('load', () => {
         card.addEventListener('click', event => handleExerciseCardClick(event));
     });
 });
+
 
 if (exercisesList) {
     exercisesList.addEventListener('click', function (event) {
@@ -51,6 +53,9 @@ if (exercisesList) {
             const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
             window.history.replaceState(null, null, newUrl); // задаю квері параметри в урлу
     
+
+            
+
             renderPage(exerciseValue);
         }
     });
@@ -68,7 +73,6 @@ window.addEventListener(
     }, 250)
 );
 
-
 // Затримувач для resize
 function debounce(func, wait) {
     let timeout;
@@ -79,15 +83,15 @@ function debounce(func, wait) {
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-    };
+    }
 }
 
 // Визначення кількості карток на сторінці (в залежності від розміру екрану)
 function updateItemsPerPage() {
     if (window.innerWidth < 768) {
-        itemsPerPage = 8;
+        itemsPerPage = 8; // для моб
     } else {
-        itemsPerPage = 9;
+        itemsPerPage = 9; // для десктопів
     }
 }
 
@@ -106,6 +110,7 @@ async function renderPage() {
     try {
         const activeContainer = document.querySelector('.switch-item.is-active');
         if (!activeContainer) {
+            console.error('No active container found');
             return;
         }
 
@@ -125,19 +130,69 @@ async function renderPage() {
         if (searchParams.size) {
             const exerciseData = await fetchDataFromApi({ bodypart, muscles, equipment });
 
-            // Рендеринг вправ (поточна сторінка)
-            renderExerciseCards(exerciseData.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
-        }
+            if (Array.isArray(exerciseData.results)) {
+            
+                const totalPages = exerciseData.totalPages;
+                currentPage = exerciseData.page; 
 
+                renderExerciseCards(exerciseData.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
+
+                renderPagination(totalPages, currentPage);
+            } else {
+                console.error('Results data is not an array:', exerciseData.results);
+            }
+        }
         const urlParams = new URLSearchParams(window.location.search); // очищають url
         window.history.replaceState(null, null, window.location.pathname ); // очищають url
-
     } catch (error) {
         console.error('Error fetching and rendering data:', error);
     }
 }
+// Функція для обробки зміни сторінки
+async function onPageChange(page, exerciseData) {
+    currentPage = page;
+    await renderPage();
+    renderExerciseCards(exerciseData);
+}
 
 
+// Рендеринг пагінації
+function renderPagination(totalPages, currentPage) {
+    let paginationMarkup = '';
+    for (let i = 1; i <= totalPages; i++) {
+        paginationMarkup += `<button class="tui-page page-btn ${i === currentPage ? 'button-is-active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    exercisesPageContainer.innerHTML = paginationMarkup; // Змінено ім'я контейнера пагінації
+
+//     // Додавання обробника кліку до кожної кнопки сторінки
+//     const pageButtons = exercisesPageContainer.querySelectorAll('.page-btn');
+//     pageButtons.forEach(button => {
+//         button.addEventListener('click', () => {
+//             const page = parseInt(button.dataset.page); 
+//         });
+//     });
+// }
+
+// Додавання обробника кліку до кожної кнопки сторінки
+const pageButtons = exercisesPageContainer.querySelectorAll('.page-btn');
+pageButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const page = parseInt(button.dataset.page); 
+ 
+        const paginationOptions = {
+            totalItems: pageSize * totalPages,
+            itemsPerPage: pageSize,
+            visiblePages: 3,
+            centerAlign: true,
+            currentPage: page 
+        };
+        onPageChange(page); 
+
+        renderPagination(totalPages, page); 
+    });
+    
+});
+}
 
 // Рендеринг карток вправ
 async function renderExerciseCards(exerciseData) {
@@ -155,22 +210,10 @@ async function renderExerciseCards(exerciseData) {
         });
 
         cardContainer.innerHTML = markup;
-        paginContainer.innerHTML = '';
-
-        if (totalPages > 1) {
-          paginationInstance = createPaginationFilters(
-            paginContainer,
-            totalPages,
-            currentPage,
-            pageSize,
-            onPageChange
-          );
-        }
     } catch (error) {
         console.error('Error rendering exercise cards:', error);
     }
 }
-
 // Шаблон для картки вправ
 function renderExerciseCardMarkup(exercise) {
 
@@ -179,7 +222,7 @@ function renderExerciseCardMarkup(exercise) {
     <div class="bp-exercisecard-wraper">
         <div class="bp-rating-info">
         <span class="bp-workout-span">WORKOUT</span>
-        <span class="bp-rating">${capitalizeFirstLetter(exercise.rating)}</span>
+        <span class="bp-rating">${exercise.rating.toFixed(1)}</span>
         <svg
             class="icon-star"
             viewBox="0 0 32 32"
@@ -234,6 +277,7 @@ function renderExerciseCardMarkup(exercise) {
 
     return markup;
 }
+
 function capitalizeFirstLetter(word) {
     // Перевірка чи починається слово з букви
     if (/^[a-zA-Z]/.test(word)) {
@@ -242,21 +286,38 @@ function capitalizeFirstLetter(word) {
         return word; // якщо перший символ є цифрою або іншим символом, нічого не робимо
     }
 }
-// Обробник на елемент переключення
+
+// Обробник кліку на елемент переключення
 function handleSwitchItemClick() {
     switchItems.forEach(item => item.classList.remove('is-active'));
     this.classList.add('is-active');
     currentPage = 1;
 
+    // Оновлюємо сторінку
     renderPage();
 }
-
 // Додавання обробника кліку до кожного елемента переключення
-// switchItems.forEach(item => {
-//     item.addEventListener('click', handleSwitchItemClick);
-// });
+switchItems.forEach(item => {
+    item.addEventListener('click', handleSwitchItemClick);
+});
 
+// Оновлення кількості карток (при завантаженні сторінки та при зміні розміру вікна)
+window.addEventListener('load', () => {
+    updateItemsPerPage();
+    renderPage();
+});
 
+window.addEventListener(
+    'resize',
+    debounce(() => {
+    const prevItemsPerPage = itemsPerPage;
+    updateItemsPerPage();
+
+    if (prevItemsPerPage !== itemsPerPage) {
+        renderPage();
+    }
+    }, 250)
+);
 
 
 export { capitalizeFirstLetter };
